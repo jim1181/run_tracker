@@ -9,6 +9,9 @@ import numpy as np
 st.title("December Running Dashboard")
 st.set_page_config(layout="wide")
 
+# Create three columns: left padding, main content, right padding
+col_left, col_main, col_right = st.columns([1, 5, 1])
+
 # Load actual data from CSV
 # Expecting a file called actual.csv in the same folder
 # with columns: date, km
@@ -92,45 +95,46 @@ for i in range(len(target_dates)):
     target_cum.append(target_start + slope * days_passed)
 
 # Plot
-fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+with col_main:
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
 
-# Quadrant 1: Cumulative comparison
-axs[0, 0].plot(plan_dates, plan_cum, label='Planned', marker='o')
-axs[0, 0].plot(actual_dates, actual_cum, label='Actual', marker='s')
-axs[0, 0].plot(target_dates, target_cum, label='Target (straight)', linestyle='--')
-axs[0, 0].set_title('Cumulative Distance')
-axs[0, 0].legend()
-axs[0, 0].tick_params(axis='x', rotation=45)
+    # Quadrant 1: Cumulative comparison
+    axs[0, 0].plot(plan_dates, plan_cum, label='Planned', marker='o')
+    axs[0, 0].plot(actual_dates, actual_cum, label='Actual', marker='s')
+    axs[0, 0].plot(target_dates, target_cum, label='Target (straight)', linestyle='--')
+    axs[0, 0].set_title('Cumulative Distance')
+    axs[0, 0].legend()
+    axs[0, 0].tick_params(axis='x', rotation=45)
+    
+    # Quadrant 2: Planned daily distances
+    plan_daily = [d for _, d in plan]
+    axs[0, 1].bar(plan_dates, plan_daily)
+    axs[0, 1].set_title('Planned Daily km')
+    axs[0, 1].tick_params(axis='x', rotation=45)
+    
+    # Quadrant 3: Remaining to 3000 based on plan
+    remaining_plan = [3000 - c for c in plan_cum]
+    axs[1, 0].plot(plan_dates, remaining_plan)
+    axs[1, 0].set_title('Remaining to 3000 (Plan)')
+    axs[1, 0].tick_params(axis='x', rotation=45)
+    
+    # Quadrant 4: Actual vs Target difference
+    # Interpolate target for actual dates
+    target_for_actual = []
+    for d in actual_dates:
+        days_passed = (d - start).days
+        target_for_actual.append(target_start + slope * days_passed)
+    
+    diff = np.array(actual_cum) - np.array(target_for_actual)
+    axs[1, 1].plot(actual_dates, diff, marker='d')
+    axs[1, 1].axhline(0, linestyle='--')
+    axs[1, 1].set_title('Actual minus Target')
+    axs[1, 1].tick_params(axis='x', rotation=45)
+    
+    plt.tight_layout()
+    st.pyplot(fig)
 
-# Quadrant 2: Planned daily distances
-plan_daily = [d for _, d in plan]
-axs[0, 1].bar(plan_dates, plan_daily)
-axs[0, 1].set_title('Planned Daily km')
-axs[0, 1].tick_params(axis='x', rotation=45)
 
-# Quadrant 3: Remaining to 3000 based on plan
-remaining_plan = [3000 - c for c in plan_cum]
-axs[1, 0].plot(plan_dates, remaining_plan)
-axs[1, 0].set_title('Remaining to 3000 (Plan)')
-axs[1, 0].tick_params(axis='x', rotation=45)
-
-# Quadrant 4: Actual vs Target difference
-# Interpolate target for actual dates
-target_for_actual = []
-for d in actual_dates:
-    days_passed = (d - start).days
-    target_for_actual.append(target_start + slope * days_passed)
-
-diff = np.array(actual_cum) - np.array(target_for_actual)
-axs[1, 1].plot(actual_dates, diff, marker='d')
-axs[1, 1].axhline(0, linestyle='--')
-axs[1, 1].set_title('Actual minus Target')
-axs[1, 1].tick_params(axis='x', rotation=45)
-
-plt.tight_layout()
-st.pyplot(fig)
-
-st.write("Update your actual.csv (date, km) after each run. The chart will refresh automatically.")
 
 
 
