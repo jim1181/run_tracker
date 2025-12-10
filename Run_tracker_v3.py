@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 st.title("December Running Dashboard")
+st.set_page_config(layout="wide")
 
 # Load actual data from CSV
 # Expecting a file called actual.csv in the same folder
@@ -130,4 +131,5 @@ plt.tight_layout()
 st.pyplot(fig)
 
 st.write("Update your actual.csv (date, km) after each run. The chart will refresh automatically.")
+
 
