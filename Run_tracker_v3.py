@@ -91,7 +91,7 @@ for i in range(len(target_dates)):
     target_cum.append(target_start + slope * days_passed)
 
 # Plot
-fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+fig, axs = plt.subplots(2, 2, figsize=(18, 12))
 
 # Quadrant 1: Cumulative comparison
 axs[0, 0].plot(plan_dates, plan_cum, label='Planned', marker='o')
@@ -130,3 +130,4 @@ plt.tight_layout()
 st.pyplot(fig)
 
 st.write("Update your actual.csv (date, km) after each run. The chart will refresh automatically.")
+
