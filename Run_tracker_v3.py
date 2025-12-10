@@ -6,7 +6,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import numpy as np
 
-st.title("December Running Dashboard")
+st.markdown("<h1 style='text-align: center;'>December Running Dashboard</h1>", unsafe_allow_html=True)
 st.set_page_config(layout="wide")
 
 # Create three columns: left padding, main content, right padding
@@ -133,6 +133,7 @@ with col_main:
     
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
