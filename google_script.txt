@@ -40,8 +40,12 @@ function fetchStravaActivities() {
   const perPage = 100;
   let allActivities = [];
 
+  // === December 2025 range ===
+  const after = Math.floor(new Date("2025-12-01T00:00:00Z").getTime() / 1000);
+  const before = Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000);
+
   while (true) {
-    const url = `${STRAVA_ACTIVITIES_URL}?page=${page}&per_page=${perPage}`;
+    const url = `${STRAVA_ACTIVITIES_URL}?page=${page}&per_page=${perPage}&after=${after}&before=${before}`;
     const response = UrlFetchApp.fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
       muteHttpExceptions: true,
@@ -50,9 +54,12 @@ function fetchStravaActivities() {
     const activities = JSON.parse(response.getContentText());
 
     if (activities.length === 0) break;
+
     allActivities = allActivities.concat(activities);
     page++;
-    if (page > 2) break; // limit to last 200 activities
+
+    // Hard limit just in case (December won’t hit this anyway)
+    if (page > 5) break;
   }
 
   return allActivities;
