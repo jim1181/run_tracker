@@ -5,6 +5,8 @@ import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
 import numpy as np
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 st.markdown("<h1 style='text-align: center;'>December Running Dashboard</h1>", unsafe_allow_html=True)
 st.set_page_config(layout="wide")
@@ -12,15 +14,38 @@ st.set_page_config(layout="wide")
 # Create three columns: left padding, main content, right padding
 col_left, col_main, col_right = st.columns([1, 4, 1])
 
-# Load actual data from CSV
-# Expecting a file called actual.csv in the same folder
-# with columns: date, km
-try:
-    actual_df = pd.read_csv("actual.csv", parse_dates=["date"])
-    actual_df = actual_df.sort_values("date")
-except FileNotFoundError:
-    st.error("actual.csv not found. Please create the file with columns: date, km")
-    st.stop()
+# Google Sheets setup
+scope = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
+client = gspread.authorize(creds)
+
+# Open the sheet (use either name or sheet ID)
+sheet = client.open("Strava Data").sheet1  # UPDATE name if needed
+
+# Open the sheet (use either name or sheet ID)
+sheet = client.open("Strava Data").sheet1  # UPDATE name if needed
+
+# Get all rows
+data = sheet.get_all_values()
+
+# Convert to DataFrame
+df = pd.DataFrame(data[1:], columns=data[0])
+
+# Extract only date + distance (A and C)
+actual_df = df[["Date", "Distance_km"]].copy()
+
+# Convert types
+actual_df["Date"] = pd.to_datetime(actual_df["Date"])
+actual_df["Distance_km"] = pd.to_numeric(actual_df["Distance_km"], errors="coerce")
+
+# Rename to match the rest of your app
+actual_df = actual_df.rename(columns={
+    "Date": "date",
+    "Distance_km": "km"
+})
+
+# Sort
+actual_df = actual_df.sort_values("date")
 
 # Starting total at end of November
 start_total = 2716
@@ -133,6 +158,7 @@ with col_main:
     
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
