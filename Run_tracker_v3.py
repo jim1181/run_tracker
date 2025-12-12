@@ -19,11 +19,8 @@ scope = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
 client = gspread.authorize(creds)
 
-# Open the sheet (use either name or sheet ID)
-sheet = client.open("Strava Data").sheet1  # UPDATE name if needed
-
-# Open the sheet (use either name or sheet ID)
-sheet = client.open("Strava Data").sheet1  # UPDATE name if needed
+# Open the sheet
+sheet = client.open("strava_datapull").sheet1
 
 # Get all rows
 data = sheet.get_all_values()
@@ -158,6 +155,7 @@ with col_main:
     
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
