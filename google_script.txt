@@ -1,0 +1,108 @@
+const STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token";
+const STRAVA_ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities";
+
+function getScriptProp(key) {
+  return PropertiesService.getScriptProperties().getProperty(key);
+}
+
+function setScriptProp(key, value) {
+  PropertiesService.getScriptProperties().setProperty(key, value);
+}
+
+function refreshAccessToken() {
+  const payload = {
+    client_id: getScriptProp("STRAVA_CLIENT_ID"),
+    client_secret: getScriptProp("STRAVA_CLIENT_SECRET"),
+    refresh_token: getScriptProp("STRAVA_REFRESH_TOKEN"),
+    grant_type: "refresh_token",
+  };
+
+  const response = UrlFetchApp.fetch(STRAVA_TOKEN_URL, {
+    method: "post",
+    payload: payload,
+    muteHttpExceptions: true,
+  });
+
+  const data = JSON.parse(response.getContentText());
+
+  if (data.access_token) {
+    setScriptProp("STRAVA_ACCESS_TOKEN", data.access_token);
+    setScriptProp("STRAVA_REFRESH_TOKEN", data.refresh_token); // update
+    return data.access_token;
+  } else {
+    throw new Error("Failed to refresh Strava token: " + JSON.stringify(data));
+  }
+}
+
+function fetchStravaActivities() {
+  const token = refreshAccessToken();
+  let page = 1;
+  const perPage = 100;
+  let allActivities = [];
+
+  while (true) {
+    const url = `${STRAVA_ACTIVITIES_URL}?page=${page}&per_page=${perPage}`;
+    const response = UrlFetchApp.fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      muteHttpExceptions: true,
+    });
+
+    const activities = JSON.parse(response.getContentText());
+
+    if (activities.length === 0) break;
+    allActivities = allActivities.concat(activities);
+    page++;
+    if (page > 2) break; // limit to last 200 activities
+  }
+
+  return allActivities;
+}
+
+function updateSheetFromStrava() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sheet.clear();
+
+  const activities = fetchStravaActivities().filter(a => a.type === "Run");
+
+  const headers = [
+    "Date",
+    "Name",
+    "Distance_km",
+    "Elapsed_Time_sec",
+    "Moving_Time_sec",
+    "Elevation_m",
+    "Average_HR",
+    "Max_HR",
+    "Pace_min_km"
+  ];
+
+  const rows = activities.map(a => {
+    const distKm = a.distance / 1000;
+    const pace = a.moving_time > 0 ? (a.moving_time / 60) / distKm : "";
+    return [
+      new Date(a.start_date_local),
+      a.name,
+      distKm,
+      a.elapsed_time,
+      a.moving_time,
+      a.total_elevation_gain,
+      a.average_heartrate || "",
+      a.max_heartrate || "",
+      pace ? pace.toFixed(2) : ""
+    ];
+  });
+
+  sheet.appendRow(headers);
+  rows.forEach(r => sheet.appendRow(r));
+
+  Logger.log("Fetched activities:");
+  Logger.log(activities);
+
+}
+
+function scheduleDailyUpdate() {
+  ScriptApp.newTrigger("updateSheetFromStrava")
+    .timeBased()
+    .everyHours(1) // or daily
+    .create();
+}
