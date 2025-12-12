@@ -11,8 +11,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 st.markdown("<h1 style='text-align: center;'>December Running Dashboard</h1>", unsafe_allow_html=True)
 st.set_page_config(layout="wide")
 
-st.write(st.secrets["google"]["client_email"])
-
 # Create three columns: left padding, main content, right padding
 col_left, col_main, col_right = st.columns([1, 4, 1])
 
@@ -168,6 +166,7 @@ with col_main:
     
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
