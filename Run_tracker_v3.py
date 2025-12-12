@@ -26,10 +26,6 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
 client = gspread.authorize(creds)
 
-# List all spreadsheets the service account can see
-spreadsheets = client.list_spreadsheet_files()
-st.write(spreadsheets)
-
 # Open the sheet
 sheet = client.open("strava_datapull").sheet1
 
@@ -166,6 +162,7 @@ with col_main:
     
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
