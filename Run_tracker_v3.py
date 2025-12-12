@@ -17,7 +17,10 @@ st.write(st.secrets["google"]["client_email"])
 col_left, col_main, col_right = st.columns([1, 4, 1])
 
 # Google Sheets setup
-scope = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
 # Streamlit Cloud: use secrets
 creds_dict = st.secrets["google"]
@@ -165,6 +168,7 @@ with col_main:
     
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
