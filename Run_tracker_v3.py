@@ -16,7 +16,15 @@ col_left, col_main, col_right = st.columns([1, 4, 1])
 
 # Google Sheets setup
 scope = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
+
+# --- Credentials ---
+local_json_path = "service_account.json"
+if os.path.exists(local_json_path):  # Local machine
+    creds = ServiceAccountCredentials.from_json_keyfile_name(local_json_path, scope)
+else:  # Streamlit Cloud
+    creds_dict = st.secrets["google"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
 client = gspread.authorize(creds)
 
 # Open the sheet
@@ -155,6 +163,7 @@ with col_main:
     
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
