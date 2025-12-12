@@ -8,9 +8,6 @@ import numpy as np
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# TEMP: check what secrets Streamlit sees
-st.write(st.secrets)
-
 st.markdown("<h1 style='text-align: center;'>December Running Dashboard</h1>", unsafe_allow_html=True)
 st.set_page_config(layout="wide")
 
@@ -162,6 +159,7 @@ with col_main:
     
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
