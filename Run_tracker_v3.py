@@ -58,53 +58,23 @@ actual_df = actual_df.rename(columns={
 # Sort
 actual_df = actual_df.sort_values("date")
 
-# Starting total at end of November
-start_total = 2716
-
 # Planned schedule (date, planned daily distance)
-plan = [
-    ('2025-12-01', 0),
-    ('2025-12-02', 10),
-    ('2025-12-03', 10),
-    ('2025-12-04', 10),
-    ('2025-12-05', 0),
-    ('2025-12-06', 10),
-    ('2025-12-07', 25),
-    ('2025-12-08', 0),
-    ('2025-12-09', 10),
-    ('2025-12-10', 10),
-    ('2025-12-11', 10),
-    ('2025-12-12', 0),
-    ('2025-12-13', 10),
-    ('2025-12-14', 25),
-    ('2025-12-15', 0),
-    ('2025-12-16', 10),
-    ('2025-12-17', 10),
-    ('2025-12-18', 10),
-    ('2025-12-19', 0),
-    ('2025-12-20', 10),
-    ('2025-12-21', 40),
-    ('2025-12-22', 0),
-    ('2025-12-23', 10),
-    ('2025-12-24', 10),
-    ('2025-12-25', 10),
-    ('2025-12-26', 0),
-    ('2025-12-27', 10),
-    ('2025-12-28', 25),
-    ('2025-12-29', 0),
-    ('2025-12-30', 10),
-    ('2025-12-31', 10),
-]
+plan_df = pd.read_csv("planned_schedule.csv")
 
-# Compute plan cumulative
-plan_dates = []
-plan_cum = []
+# Convert date to datetime.date
+plan_df['date'] = pd.to_datetime(plan_df['date']).dt.date
+
+# Compute cumulative planned distance
+start_total = 2716  # your existing starting total, as at end of November
 total = start_total
-for d_str, dist in plan:
-    d = dt.datetime.strptime(d_str, '%Y-%m-%d').date()
-    total += dist
-    plan_dates.append(d)
-    plan_cum.append(total)
+cum_list = []
+
+for km in plan_df['km']:
+    total += km
+    cum_list.append(total)
+
+# Add cumulative to DataFrame for convenience
+plan_df['cum'] = cum_list
 
 # Compute actual cumulative
 actual_dates = []
@@ -116,14 +86,14 @@ for _, row in actual_df.iterrows():
     actual_cum.append(t)
 
 # Target line: from Dec 1 to Dec 31 straight to 3000
-start = plan_dates[0]
-end = plan_dates[-1]
+start = plan_df['date'].iloc[0]
+end = plan_df['date'].iloc[-1]
 target_start = start_total
 remaining = 3000 - target_start
 num_days = (end - start).days
 slope = remaining / num_days
 
-target_dates = plan_dates
+target_dates = plan_df['date']
 
 target_cum = []
 for i in range(len(target_dates)):
@@ -133,40 +103,35 @@ for i in range(len(target_dates)):
 # Plot
 with col_main:
     fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    axs = axs.flatten()  # flatten 2x2 grid to 1D array for easier indexing
 
     # Quadrant 1: Cumulative comparison
-    axs[0, 0].plot(plan_dates, plan_cum, label='Planned', marker='o')
-    axs[0, 0].plot(actual_dates, actual_cum, label='Actual', marker='s')
-    axs[0, 0].plot(target_dates, target_cum, label='Target (straight)', linestyle='--')
-    axs[0, 0].set_title('Cumulative Distance')
-    axs[0, 0].legend()
-    axs[0, 0].tick_params(axis='x', rotation=45)
-    
+    axs[0].plot(plan_df['date'].to_numpy(), plan_df['cum'].to_numpy(), label='Planned', marker='o')
+    axs[0].plot(np.array(actual_dates), np.array(actual_cum), label='Actual', marker='s')
+    axs[0].plot(np.array(target_dates), np.array(target_cum), label='Target (straight)', linestyle='--')
+    axs[0].set_title('Cumulative Distance')
+    axs[0].legend()
+    axs[0].tick_params(axis='x', rotation=45)
+
     # Quadrant 2: Planned daily distances
-    plan_daily = [d for _, d in plan]
-    axs[0, 1].bar(plan_dates, plan_daily)
-    axs[0, 1].set_title('Planned Daily km')
-    axs[0, 1].tick_params(axis='x', rotation=45)
-    
+    axs[1].bar(plan_df['date'].to_numpy(), plan_df['km'].to_numpy())
+    axs[1].set_title('Planned Daily km')
+    axs[1].tick_params(axis='x', rotation=45)
+
     # Quadrant 3: Remaining to 3000 based on plan
-    remaining_plan = [3000 - c for c in plan_cum]
-    axs[1, 0].plot(plan_dates, remaining_plan)
-    axs[1, 0].set_title('Remaining to 3000 (Plan)')
-    axs[1, 0].tick_params(axis='x', rotation=45)
-    
+    remaining_plan = (3000 - plan_df['cum']).to_numpy()
+    axs[2].plot(plan_df['date'].to_numpy(), remaining_plan)
+    axs[2].set_title('Remaining to 3000 (Plan)')
+    axs[2].tick_params(axis='x', rotation=45)
+
     # Quadrant 4: Actual vs Target difference
-    # Interpolate target for actual dates
-    target_for_actual = []
-    for d in actual_dates:
-        days_passed = (d - start).days
-        target_for_actual.append(target_start + slope * days_passed)
-    
+    target_for_actual = [target_start + slope * (d - start).days for d in actual_dates]
     diff = np.array(actual_cum) - np.array(target_for_actual)
-    axs[1, 1].plot(actual_dates, diff, marker='d')
-    axs[1, 1].axhline(0, linestyle='--')
-    axs[1, 1].set_title('Actual minus Target')
-    axs[1, 1].tick_params(axis='x', rotation=45)
-    
+    axs[3].plot(np.array(actual_dates), diff, marker='d')
+    axs[3].axhline(0, linestyle='--')
+    axs[3].set_title('Actual minus Target')
+    axs[3].tick_params(axis='x', rotation=45)
+
     plt.tight_layout()
     st.pyplot(fig)
 
