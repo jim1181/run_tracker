@@ -10,7 +10,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 
 st.set_page_config(layout="wide")
-st.markdown("<h1 style='text-align: center;'>December Running Dashboard</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>December Running Dashboard V2</h1>", unsafe_allow_html=True)
 
 # Create three columns: left padding, main content, right padding
 col_left, col_main, col_right = st.columns([1, 4, 1])
