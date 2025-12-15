@@ -1,7 +1,5 @@
 # streamlit_app.py
 
-# test making change to commit to git
-
 import streamlit as st
 import pandas as pd
 import datetime as dt
@@ -9,9 +7,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import json
 
-st.markdown("<h1 style='text-align: center;'>December Running Dashboard</h1>", unsafe_allow_html=True)
 st.set_page_config(layout="wide")
+st.markdown("<h1 style='text-align: center;'>December Running Dashboard</h1>", unsafe_allow_html=True)
 
 # Create three columns: left padding, main content, right padding
 col_left, col_main, col_right = st.columns([1, 4, 1])
@@ -22,10 +21,16 @@ scope = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-# Streamlit Cloud: use secrets
-creds_dict = st.secrets["google"]
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+# Credentials for Google cleint - Try Streamlit first, if not use local.
+try:
+    creds_dict = st.secrets["google"]
+    st.write("Using Cloud secrets")
+except:
+    with open("service_account.json") as f:
+        creds_dict = json.load(f)
+    st.write("Using local JSON credentials")
 
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 
 # Open the sheet
